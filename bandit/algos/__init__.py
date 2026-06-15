@@ -2,8 +2,14 @@
 
 from .base import Algorithm
 from .epsilon_greedy import EpsilonGreedy, annealed
+from .exp3 import EXP3
 from .thompson import ThompsonBernoulli, ThompsonGaussian
 from .ucb import UCB1
 
-__all__ = ["Algorithm", "EpsilonGreedy", "annealed", "UCB1",
-           "ThompsonBernoulli", "ThompsonGaussian"]
+__all__ = [
+    "Algorithm",
+    "EpsilonGreedy", "annealed",
+    "UCB1",
+    "ThompsonBernoulli", "ThompsonGaussian",
+    "EXP3",
+]
