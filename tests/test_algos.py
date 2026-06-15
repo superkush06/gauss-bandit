@@ -3,7 +3,13 @@
 
 import pytest
 
-from bandit.algos import UCB1, EpsilonGreedy, annealed
+from bandit.algos import (
+    UCB1,
+    EpsilonGreedy,
+    ThompsonBernoulli,
+    ThompsonGaussian,
+    annealed,
+)
 
 
 def test_epsilon_greedy_records_value():
@@ -53,3 +59,26 @@ def test_ucb1_index_widens_for_untried():
 def test_ucb1_rejects_invalid():
     with pytest.raises(ValueError):
         UCB1(n_arms=0)
+
+
+def test_thompson_bernoulli_updates_posterior():
+    a = ThompsonBernoulli(n_arms=2, seed=0)
+    a.update(0, 1.0)
+    a.update(0, 1.0)
+    a.update(0, 0.0)
+    assert a.alphas[0] == 3.0
+    assert a.betas[0] == 2.0
+
+
+def test_thompson_bernoulli_validates_reward():
+    a = ThompsonBernoulli(n_arms=2)
+    with pytest.raises(ValueError):
+        a.update(0, 1.5)
+
+
+def test_thompson_gaussian_posterior_means():
+    a = ThompsonGaussian(n_arms=1, sigma_obs=1.0, mu_0=0.0, sigma_0=100.0, seed=0)
+    for _ in range(100):
+        a.update(0, 5.0)
+    mu_n, _ = a._posterior(0)
+    assert mu_n == pytest.approx(5.0, abs=0.05)
