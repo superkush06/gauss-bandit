@@ -4,6 +4,7 @@
 import pytest
 
 from bandit.algos import (
+    EXP3,
     UCB1,
     EpsilonGreedy,
     ThompsonBernoulli,
@@ -22,8 +23,9 @@ def test_epsilon_greedy_records_value():
 
 def test_epsilon_greedy_explore_when_eps_one():
     a = EpsilonGreedy(n_arms=3, eps=1.0, seed=0)
-    a.update(0, 10.0)
+    a.update(0, 10.0)  # bias toward arm 0
     picks = [a.select(t) for t in range(1, 100)]
+    # With eps=1 we should see all arms, not just 0
     assert len(set(picks)) >= 2
 
 
@@ -52,7 +54,8 @@ def test_ucb1_pulls_each_arm_first():
 
 def test_ucb1_index_widens_for_untried():
     a = UCB1(n_arms=2)
-    a.update(0, 1.0)
+    a.update(0, 1.0)  # arm 0 looks good
+    # arm 1 hasn't been pulled — UCB should pick it next
     assert a.select(2) == 1
 
 
@@ -66,8 +69,8 @@ def test_thompson_bernoulli_updates_posterior():
     a.update(0, 1.0)
     a.update(0, 1.0)
     a.update(0, 0.0)
-    assert a.alphas[0] == 3.0
-    assert a.betas[0] == 2.0
+    assert a.alphas[0] == 3.0  # prior 1 + 2 successes
+    assert a.betas[0] == 2.0   # prior 1 + 1 failure
 
 
 def test_thompson_bernoulli_validates_reward():
@@ -82,3 +85,27 @@ def test_thompson_gaussian_posterior_means():
         a.update(0, 5.0)
     mu_n, _ = a._posterior(0)
     assert mu_n == pytest.approx(5.0, abs=0.05)
+
+
+def test_exp3_probs_sum_to_one():
+    a = EXP3(n_arms=4, gamma=0.1, seed=0)
+    probs = a._probs()
+    assert abs(sum(probs) - 1.0) < 1e-12
+    assert all(0 < p < 1 for p in probs)
+
+
+def test_exp3_weight_grows_on_reward():
+    a = EXP3(n_arms=3, gamma=0.5, seed=0)
+    w_before = a.weights[0]
+    a.update(0, 1.0)
+    assert a.weights[0] > w_before
+
+
+def test_exp3_validates():
+    with pytest.raises(ValueError):
+        EXP3(n_arms=3, gamma=0.0)
+    with pytest.raises(ValueError):
+        EXP3(n_arms=3, gamma=1.5)
+    a = EXP3(n_arms=3, gamma=0.1)
+    with pytest.raises(ValueError):
+        a.update(0, -0.1)
