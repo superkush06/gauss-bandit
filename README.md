@@ -5,8 +5,15 @@
 [![license](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 > Classical bandit algorithms with rigorous regret analysis. EpsilonGreedy,
-> UCB1, Thompson sampling (Bernoulli + Gaussian), and EXP3 — all under a clean
-> interface, with deterministic seeds and a replication-aware experiment runner.
+> UCB1, Thompson sampling (Bernoulli + Gaussian), EXP3, and **LinUCB
+> contextual bandits** — all under a clean interface, with deterministic
+> seeds and a replication-aware experiment runner.
+
+![regret curves](docs/demo.png)
+
+*Top: cumulative regret on a 5-arm Bernoulli bandit — Thompson is near-flat
+(sublinear), EXP3 pays for adversarial robustness. Bottom: LinUCB regret
+plateaus on a linear contextual bandit. Reproduce: `python examples/render_hero.py`.*
 
 ## TL;DR
 
@@ -28,6 +35,9 @@ print(result.pseudo_regret_mean[-1])  # ~ O(log T)
 - **Envs**: `BernoulliBandit`, `GaussianBandit`.
 - **Algos**: `EpsilonGreedy` (constant + annealed), `UCB1`, `ThompsonBernoulli`,
   `ThompsonGaussian`, `EXP3`.
+- **Contextual**: `LinUCB` (disjoint linear models) + `LinearContextualBandit`
+  environment + `run_contextual` — the algorithm class behind real-world
+  recommendation/ads bandits.
 - **Metrics**: cumulative regret, pseudo-regret, Lai-Robbins lower bound.
 - **Runner**: replication-aware experiment runner with per-step regret traces.
 - **Theory**: [`docs/theory.md`](docs/theory.md) — short primer on regret bounds.
