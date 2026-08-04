@@ -66,3 +66,43 @@ def test_linucb_beats_random():
         rand.append(cum)
 
     assert lin[-1] < 0.5 * rand[-1]
+
+
+class _DirectInverseLinUCB(LinUCB):
+    """Reference implementation: refactorise A_a on every index evaluation."""
+
+    def select(self, x):
+        x = np.asarray(x, dtype=float)
+        best_arm, best_p = 0, -np.inf
+        for a in range(self.n_arms):
+            A_inv = np.linalg.inv(self.A[a])
+            p = (A_inv @ self.b[a]) @ x + self.alpha * np.sqrt(max(x @ A_inv @ x, 0.0))
+            if p > best_p:
+                best_arm, best_p = a, p
+        return best_arm
+
+
+def test_sherman_morrison_tracks_the_true_inverse():
+    """A_inv is maintained by rank-1 updates; it must not drift from the
+    inverse it stands in for."""
+    algo = LinUCB(n_arms=3, dim=5, alpha=1.0)
+    rng = np.random.default_rng(0)
+    for _ in range(2000):
+        x = rng.standard_normal(5)
+        algo.update(algo.select(x), float(rng.normal()), x)
+    for a in range(algo.n_arms):
+        assert np.allclose(algo.A_inv[a], np.linalg.inv(algo.A[a]), atol=1e-10)
+
+
+def test_sherman_morrison_picks_the_same_arms_as_the_direct_inverse():
+    """The optimisation is meant to be invisible: identical decisions, 1k
+    rounds, same environment."""
+    fast, slow = LinUCB(3, 4, alpha=1.0), _DirectInverseLinUCB(3, 4, alpha=1.0)
+    env = _env(seed=5)
+    for _ in range(1000):
+        x = env.context()
+        arm = fast.select(x)
+        assert slow.select(x) == arm
+        r = env.pull(arm, x)
+        fast.update(arm, r, x)
+        slow.update(arm, r, x)

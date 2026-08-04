@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gauss-bandit"
-version = "0.2.0"
+version = "0.5.3"
 description = "Multi-armed bandits: classical algorithms, regret benchmarks."
 authors = [{name = "superkush06"}]
 readme = "README.md"
